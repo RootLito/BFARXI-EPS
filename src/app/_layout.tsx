@@ -1,18 +1,45 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { Slot, useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
+import {
+    configureReanimatedLogger,
+    ReanimatedLogLevel,
+} from "react-native-reanimated";
+import "../global.css";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+// Disable Reanimated strict-mode logger warnings during render
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
-SplashScreen.preventAutoHideAsync();
+function RootLayoutNav() {
+  const { user, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAdminGroup = segments[0] === "(admin)";
+    const inUserGroup = segments[0] === "(user)";
+
+    if (!user) {
+      router.replace("/login");
+    } else if (user.role === "admin" && !inAdminGroup) {
+      router.replace("/(admin)/home");
+    } else if (user.role === "client" && !inUserGroup) {
+      router.replace("/(user)/home");
+    }
+  }, [user, isLoading, segments]);
+
+  return <Slot />;
+}
+
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
   );
 }
