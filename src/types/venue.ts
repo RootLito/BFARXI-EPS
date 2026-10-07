@@ -1,8 +1,8 @@
 export interface Venue {
   id?: string;
   address: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at?: string;
 }
 

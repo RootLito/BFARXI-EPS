@@ -24,7 +24,11 @@ export default function AdminLayout() {
   const navItems = [
     { label: "Home", path: "/(admin)/home", icon: Home },
     { label: "Event", path: "/(admin)/event", icon: Calendar },
-    { label: "Certificate of Appearance", path: "/(admin)/ca", icon: Award },
+    {
+      label: "Certificate of Appearance",
+      path: "/(admin)/certificate",
+      icon: Award,
+    },
     { label: "Employees", path: "/(admin)/employee", icon: Users },
   ];
 
@@ -44,36 +48,16 @@ export default function AdminLayout() {
       >
         {/* Logo Header */}
         <View className="flex-row items-center gap-3 mb-8 pt-2">
-          <View className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 justify-center items-center">
+          <View className="w-20 h-20 rounded-2xl bg-white/10 border border-white/20 justify-center items-center">
             <Text className="text-white font-black text-xs tracking-widest">
               EPAS
             </Text>
           </View>
           <View>
-            <Text className="text-white font-extrabold text-lg tracking-wide">
+            <Text className="text-white font-extrabold text-2xl tracking-wide">
               BFARXI-EPAS
             </Text>
-            <Text className="text-brand-200 text-xs font-medium">
-              Admin Portal
-            </Text>
-          </View>
-        </View>
-
-        {/* User Profile Card */}
-        <View className="flex-row items-center gap-3 p-3.5 bg-white/10 rounded-2xl mb-8 border border-white/10">
-          <View className="w-11 h-11 rounded-full bg-brand-400 justify-center items-center border-2 border-white/30">
-            <User size={22} color="#ffffff" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-white font-bold text-base" numberOfLines={1}>
-              {user?.fullname || "Admin User"}
-            </Text>
-            <Text
-              className="text-brand-200 text-xs font-medium"
-              numberOfLines={1}
-            >
-              {user?.position || "Administrator"}
-            </Text>
+            <Text className="text-brand-200 font-medium">Admin Portal</Text>
           </View>
         </View>
 
@@ -112,10 +96,28 @@ export default function AdminLayout() {
         </View>
       </ScrollView>
 
+      {/* User Profile Card */}
+      <View className="flex-row items-center gap-3 p-3.5 bg-white/10 rounded-2xl border border-white/10">
+        <View className="w-11 h-11 rounded-full bg-brand-400 justify-center items-center border-2 border-white/30">
+          <User size={22} color="#ffffff" />
+        </View>
+        <View className="flex-1">
+          <Text className="text-white font-bold text-base" numberOfLines={1}>
+            {user?.fullname || "Admin User"}
+          </Text>
+          <Text
+            className="text-brand-200 text-xs font-medium"
+            numberOfLines={1}
+          >
+            {user?.position || "Administrator"}
+          </Text>
+        </View>
+      </View>
+
       {/* Logout Action */}
       <TouchableOpacity
         onPress={logout}
-        className="flex-row items-center gap-3 px-4 py-3.5 bg-white/5 rounded-2xl border border-white/10 active:bg-white/10 mt-4"
+        className="flex-row justify-center items-center gap-3 py-4 bg-red-50 rounded-xl mt-2"
       >
         <LogOut size={18} color="#FF5722" />
         <Text className="text-accent-vibrant font-semibold text-sm">
@@ -142,23 +144,18 @@ export default function AdminLayout() {
         }}
         renderDrawerContent={renderDrawerContent}
       >
-        <View className="flex-1 bg-brand-50">
+        <View className="flex-1">
           {/* Header Bar */}
-          <SafeAreaView edges={["top"]} className="bg-brand-50">
+          <SafeAreaView edges={["top"]}>
             <View className="flex-row items-center justify-between px-5 py-3">
               <TouchableOpacity
                 onPress={() => setOpen(true)}
-                className="w-11 h-11 bg-white rounded-2xl justify-center items-center shadow-sm border border-brand-100/60"
+                className="w-14 h-14 rounded-full bg-brand-100 justify-center items-center"
               >
-                <Menu size={22} color="#395886" />
+                <Menu size={28} color="#638ECB" />
               </TouchableOpacity>
-
-              <Text className="text-brand-500 font-bold text-lg tracking-tight">
-                BFARXI-EPAS
-              </Text>
-
-              <TouchableOpacity className="w-11 h-11 bg-white rounded-2xl justify-center items-center shadow-sm border border-brand-100/60 relative">
-                <User size={20} color="#395886" />
+              <TouchableOpacity className="w-20 h-20 bg-brand-50 rounded-full justify-center items-center">
+                <User size={48} color="#395886" />
               </TouchableOpacity>
             </View>
           </SafeAreaView>
