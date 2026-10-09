@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase"; // adjust path to your supabase client
+import { supabase } from "@/lib/supabase";
 import {
     Attendance,
     CreateEventInput,
@@ -50,6 +50,42 @@ export async function getEventById(id: string): Promise<Event | null> {
 }
 
 /**
+ * Helper to generate and upload QR code image to Supabase Storage
+ */
+async function generateAndUploadQRCode(qrCode: string): Promise<string | undefined> {
+  try {
+    const qrApiUrl = `https://quickchart.io/qr?text=${encodeURIComponent(qrCode)}&size=300&margin=2`;
+    const response = await fetch(qrApiUrl);
+
+    if (!response.ok) throw new Error("Failed to generate QR image via API");
+
+    const arrayBuffer = await response.arrayBuffer();
+    const filePath = `qrcodes/${qrCode}.png`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("event-attachments")
+      .upload(filePath, arrayBuffer, {
+        contentType: "image/png",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Error uploading QR image to Supabase:", uploadError);
+      return undefined;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("event-attachments")
+      .getPublicUrl(filePath);
+
+    return publicUrlData.publicUrl;
+  } catch (err) {
+    console.warn("QR image creation failed, falling back to string identifier only:", err);
+    return undefined;
+  }
+}
+
+/**
  * Create a new Venue + Event + Attachments in order
  */
 export async function createEvent(input: CreateEventInput): Promise<Event> {
@@ -71,10 +107,11 @@ export async function createEvent(input: CreateEventInput): Promise<Event> {
     throw venueError;
   }
 
-  // 2. Generate unique QR Code identifier
+  // 2. Generate unique QR Code identifier & image URL
   const qrCode = `EVT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const qrImageUrl = await generateAndUploadQRCode(qrCode);
 
-  // 3. Insert Event with Foreign Key to Venue
+  // 3. Insert Event with Foreign Key to Venue & QR Code details
   const { data: eventData, error: eventError } = await supabase
     .from("events")
     .insert([
@@ -86,6 +123,7 @@ export async function createEvent(input: CreateEventInput): Promise<Event> {
         timeline_type: input.timeline_type,
         venue_id: venueData.id,
         qr_code: qrCode,
+        qr_image_url: qrImageUrl,
         status: "upcoming",
       },
     ])
@@ -122,7 +160,6 @@ export async function createEvent(input: CreateEventInput): Promise<Event> {
  * Update Event and its Venue
  */
 export async function updateEvent(input: UpdateEventInput): Promise<Event> {
-  // 1. Update Venue if venue info and venue_id exist
   if (input.venue && input.venue_id) {
     const { error: venueError } = await supabase
       .from("venues")
@@ -139,7 +176,6 @@ export async function updateEvent(input: UpdateEventInput): Promise<Event> {
     }
   }
 
-  // 2. Update Event details
   const { error: eventError } = await supabase
     .from("events")
     .update({
@@ -160,7 +196,7 @@ export async function updateEvent(input: UpdateEventInput): Promise<Event> {
 }
 
 /**
- * Delete Event (Cascades to venue and attachments based on DB rules)
+ * Delete Event
  */
 export async function deleteEvent(id: string): Promise<void> {
   const { error } = await supabase

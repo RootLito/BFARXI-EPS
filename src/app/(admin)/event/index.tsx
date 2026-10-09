@@ -1,4 +1,6 @@
 import { EventCard } from "@/components/EventCard";
+import { EventDetailModal } from "@/components/EventDetailModal";
+import { QRCodeModal } from "@/components/QRCodeModal";
 import { getEvents } from "@/services/eventService";
 import { Event } from "@/types";
 import { useRouter } from "expo-router";
@@ -17,7 +19,7 @@ import {
     View,
 } from "react-native";
 
-const FILTER_TABS = ["All", "Upcoming", "Ongoing", "Completed", "Cancelled"];
+const FILTER_TABS = ["All", "Upcoming", "Ongoing", "Completed"];
 
 export default function EventIndex() {
   const router = useRouter();
@@ -27,8 +29,16 @@ export default function EventIndex() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Full-screen Image Viewer State
+  // Full-screen Image State
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+
+  // QR Code Modal State
+  const [selectedQrEvent, setSelectedQrEvent] = useState<Event | null>(null);
+
+  // Detail View Modal State
+  const [selectedDetailEvent, setSelectedDetailEvent] = useState<Event | null>(
+    null,
+  );
 
   const fetchEvents = async () => {
     try {
@@ -88,7 +98,7 @@ export default function EventIndex() {
   return (
     <View className="flex-1 bg-white relative">
       <ScrollView
-        className="flex-1 px-6 pt-2"
+        className="flex-1 px-6"
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -96,7 +106,7 @@ export default function EventIndex() {
         }
       >
         {/* Page Title */}
-        <Text className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">
+        <Text className="text-3xl font-extrabold text-brand-500 mb-4 tracking-tight">
           Events
         </Text>
 
@@ -112,7 +122,7 @@ export default function EventIndex() {
           />
         </View>
 
-        {/* Filter Tabs Horizontal Scroll */}
+        {/* Filter Tabs */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -125,10 +135,8 @@ export default function EventIndex() {
                 <TouchableOpacity
                   key={tab}
                   onPress={() => setSelectedTab(tab)}
-                  className={`px-4 py-2 rounded-full border ${
-                    isActive
-                      ? "bg-slate-900 border-slate-900"
-                      : "bg-white border-slate-200"
+                  className={`px-4 py-2 rounded-full ${
+                    isActive ? "bg-brand-500" : "bg-white border-slate-200"
                   }`}
                 >
                   <Text
@@ -154,10 +162,11 @@ export default function EventIndex() {
             <EventCard
               key={event.id}
               event={event}
-              onPress={(e) => router.push(`/(admin)/event/${e.id}` as any)}
+              onPress={(e) => setSelectedDetailEvent(e)}
               onEdit={handleEditEvent}
               onDelete={handleDeleteEvent}
               onImagePress={(url) => setSelectedImageUrl(url)}
+              onQrPress={(e) => setSelectedQrEvent(e)}
             />
           ))
         ) : (
@@ -173,7 +182,7 @@ export default function EventIndex() {
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => router.push("/(admin)/event/create" as any)}
-        className="absolute bottom-8 right-6 w-14 h-14 rounded-full bg-slate-900 justify-center items-center shadow-lg border border-white/20 z-50"
+        className="absolute bottom-8 right-6 w-20 h-20 rounded-full bg-brand-500 justify-center items-center shadow-lg border border-white/20 z-50"
         style={{
           elevation: 6,
           shadowColor: "#000",
@@ -184,6 +193,24 @@ export default function EventIndex() {
       >
         <Plus size={28} color="#ffffff" />
       </TouchableOpacity>
+
+      {/* Full Event Details Modal */}
+      <EventDetailModal
+        visible={!!selectedDetailEvent}
+        event={selectedDetailEvent}
+        onClose={() => setSelectedDetailEvent(null)}
+        onImagePress={(url) => setSelectedImageUrl(url)}
+        onQrPress={(e) => setSelectedQrEvent(e)}
+      />
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        visible={!!selectedQrEvent}
+        onClose={() => setSelectedQrEvent(null)}
+        qrCode={selectedQrEvent?.qr_code || ""}
+        qrImageUrl={selectedQrEvent?.qr_image_url}
+        eventTitle={selectedQrEvent?.title}
+      />
 
       {/* Full Screen Image Modal */}
       <Modal

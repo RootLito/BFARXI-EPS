@@ -94,16 +94,8 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-white"
-      contentContainerStyle={{
-        paddingHorizontal: 24,
-        paddingTop: 20,
-        paddingBottom: 40,
-      }}
-    >
-      {/* HEADER SECTION WITH AVATAR & PENCIL OVERLAY */}
-      <View className="flex-row items-center gap-5 mb-8">
+    <ScrollView className="flex-1">
+      <View className="flex-row items-center gap-5 mb-8 px-6">
         <View className="relative">
           <View className="w-32 h-32 rounded-full bg-slate-100 items-center justify-center border border-slate-200/60 shadow-sm overflow-hidden">
             {avatarUrl ? (
@@ -146,24 +138,20 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* SECTION TITLE & ACTIONS */}
-      <View className="flex-row justify-between items-center mb-4">
-        <Text className="text-base font-bold text-slate-900">Profile</Text>
+      <View className="flex-row justify-end items-center mb-4 px-6">
         {!isEditing && (
           <TouchableOpacity
             onPress={() => setIsEditing(true)}
-            className="flex-row items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100"
+            className="flex-row items-center gap-2 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100"
           >
             <Edit2 size={13} color="#ea580c" />
-            <Text className="text-md font-bold text-orange-600">
-              Edit Details
-            </Text>
+            <Text className="text-orange-600 text-sm">Edit Details</Text>
           </TouchableOpacity>
         )}
       </View>
 
       {/* FIELD LIST CONTAINER */}
-      <View className="gap-3 mb-8">
+      <View className="gap-3 px-6 mb-8">
         {/* Full Name */}
         <View className="flex-row items-center justify-between p-3.5 bg-slate-50/60 rounded-2xl border border-slate-100">
           <View className="flex-row items-center gap-3.5 flex-1 mr-2">

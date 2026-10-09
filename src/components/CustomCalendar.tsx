@@ -1,10 +1,15 @@
+import { EventDetailModal } from "@/components/EventDetailModal";
+import { EventPickerModal } from "@/components/EventPickerModal";
+import { Event } from "@/types";
 import React, { useRef, useState } from "react";
 import { PanResponder, Text, TouchableOpacity, View } from "react-native";
 
 interface CustomCalendarProps {
-  selectedDate?: string; // YYYY-MM-DD
+  selectedDate?: string;
   onSelectDate?: (dateString: string) => void;
-  highlightedDates?: string[]; // Dates with events
+  highlightedDates?: string[];
+  events?: Event[];
+  onEventPress?: (event: Event) => void;
 }
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -27,26 +32,54 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
   selectedDate,
   onSelectDate,
   highlightedDates = [],
+  events = [],
+  onEventPress,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const isSwipingRef = useRef(false);
+
+  // Picker modal state (for 2+ events on a day)
+  const [pickerModalVisible, setPickerModalVisible] = useState(false);
+  const [pickerDateStr, setPickerDateStr] = useState<string>("");
+  const [pickerEvents, setPickerEvents] = useState<Event[]>([]);
+
+  // Detail modal state (for viewing a single event)
+  const [selectedDetailEvent, setSelectedDetailEvent] = useState<Event | null>(
+    null,
+  );
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
   const handlePrevMonth = () => {
-    setCurrentMonth(new Date(year, month - 1, 1));
+    if (isSwipingRef.current) return;
+    isSwipingRef.current = true;
+    setCurrentMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+    );
+    setTimeout(() => {
+      isSwipingRef.current = false;
+    }, 350);
   };
 
   const handleNextMonth = () => {
-    setCurrentMonth(new Date(year, month + 1, 1));
+    if (isSwipingRef.current) return;
+    isSwipingRef.current = true;
+    setCurrentMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+    );
+    setTimeout(() => {
+      isSwipingRef.current = false;
+    }, 350);
   };
 
-  // Setup PanResponder for left/right swipe navigation
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dy) < 20;
+        return Math.abs(gestureState.dx) > 35 && Math.abs(gestureState.dy) < 20;
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dx < -50) {
@@ -58,7 +91,6 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
     }),
   ).current;
 
-  // Calendar matrix calculation (Monday start)
   const firstDay = new Date(year, month, 1).getDay();
   const paddingDays = firstDay === 0 ? 6 : firstDay - 1;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -67,7 +99,6 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
   const cells: { day: number; currentMonth: boolean; monthOffset: number }[] =
     [];
 
-  // Previous month padding days
   for (let i = paddingDays - 1; i >= 0; i--) {
     cells.push({
       day: prevMonthDays - i,
@@ -75,13 +106,9 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
       monthOffset: -1,
     });
   }
-
-  // Current month days
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push({ day: d, currentMonth: true, monthOffset: 0 });
   }
-
-  // Next month padding days to complete grid rows
   const remainingCells = (7 - (cells.length % 7)) % 7;
   for (let i = 1; i <= remainingCells; i++) {
     cells.push({ day: i, currentMonth: false, monthOffset: 1 });
@@ -99,13 +126,39 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
     if (onSelectDate) {
       onSelectDate(dateStr);
     }
+
+    const dayEvents = events.filter((evt) => {
+      if (!evt.start_date) return false;
+      return evt.start_date.split("T")[0] === dateStr;
+    });
+
+    if (dayEvents.length === 1) {
+      // 1 Event -> Open EventDetailModal directly
+      setSelectedDetailEvent(dayEvents[0]);
+      setDetailModalVisible(true);
+      if (onEventPress) onEventPress(dayEvents[0]);
+    } else if (dayEvents.length > 1) {
+      // 2+ Events -> Open centered EventPickerModal first
+      setPickerEvents(dayEvents);
+      setPickerDateStr(dateStr);
+      setPickerModalVisible(true);
+    }
+  };
+
+  const handlePickerSelect = (evt: Event) => {
+    setPickerModalVisible(false);
+    setTimeout(() => {
+      setSelectedDetailEvent(evt);
+      setDetailModalVisible(true);
+      if (onEventPress) onEventPress(evt);
+    }, 300);
   };
 
   return (
     <View className="w-full" {...panResponder.panHandlers}>
-      {/* Header: Month Year */}
+      {/* Month & Year Header */}
       <View className="flex-row justify-between items-center mb-6">
-        <Text className="text-3xl font-bold text-slate-900">
+        <Text className="text-3xl font-bold text-brand-500">
           {MONTH_NAMES[month]} {year}
         </Text>
       </View>
@@ -122,10 +175,9 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
         ))}
       </View>
 
-      {/* Underline Divider */}
       <View className="h-[1px] bg-slate-200 mb-4" />
 
-      {/* Days Grid - Perfectly Square Day Cells */}
+      {/* Grid */}
       <View className="flex-row flex-wrap">
         {cells.map((cell, idx) => {
           const targetDate = new Date(year, month + cell.monthOffset, cell.day);
@@ -137,14 +189,15 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
           const dateStr = `${targetDate.getFullYear()}-${formattedMonth}-${formattedDay}`;
 
           const isSelected = selectedDate === dateStr;
-          const isEventDay = highlightedDates.includes(dateStr);
+          const isEventDay =
+            highlightedDates.includes(dateStr) ||
+            events.some((e) => e.start_date?.startsWith(dateStr));
 
-          // Dynamic class selection for circle indicator vs selection
           let circleStyle = "";
           if (isSelected) {
-            circleStyle = "bg-slate-900"; // Active selected date
+            circleStyle = "bg-slate-900";
           } else if (isEventDay && cell.currentMonth) {
-            circleStyle = "bg-brand-100"; // Event day circle
+            circleStyle = "bg-blue-100";
           }
 
           return (
@@ -171,6 +224,22 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
           );
         })}
       </View>
+
+      {/* Centered Picker Modal for 2+ events */}
+      <EventPickerModal
+        visible={pickerModalVisible}
+        dateString={pickerDateStr}
+        events={pickerEvents}
+        onClose={() => setPickerModalVisible(false)}
+        onSelectEvent={handlePickerSelect}
+      />
+
+      {/* Event Details Modal */}
+      <EventDetailModal
+        visible={detailModalVisible}
+        event={selectedDetailEvent}
+        onClose={() => setDetailModalVisible(false)}
+      />
     </View>
   );
 };

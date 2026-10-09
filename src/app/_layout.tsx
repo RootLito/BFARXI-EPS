@@ -1,5 +1,6 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Slot, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import {
     configureReanimatedLogger,
@@ -39,6 +40,7 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
+      <StatusBar style="dark" />
       <RootLayoutNav />
     </AuthProvider>
   );

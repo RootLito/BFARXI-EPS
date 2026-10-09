@@ -7,10 +7,11 @@ import {
     LogOut,
     Menu,
     User,
+    UserCheck,
     Users,
 } from "lucide-react-native";
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Drawer } from "react-native-drawer-layout";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,8 +25,9 @@ export default function AdminLayout() {
   const navItems = [
     { label: "Home", path: "/(admin)/home", icon: Home },
     { label: "Event", path: "/(admin)/event", icon: Calendar },
+    { label: "Attendance", path: "/(admin)/attendance", icon: UserCheck },
     {
-      label: "Certificate of Appearance",
+      label: "Certificate",
       path: "/(admin)/certificate",
       icon: Award,
     },
@@ -46,13 +48,12 @@ export default function AdminLayout() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        {/* Logo Header */}
         <View className="flex-row items-center gap-3 mb-8 pt-2">
-          <View className="w-20 h-20 rounded-2xl bg-white/10 border border-white/20 justify-center items-center">
-            <Text className="text-white font-black text-xs tracking-widest">
-              EPAS
-            </Text>
-          </View>
+          <Image
+            source={require("../../../assets/images/white.png")}
+            style={{ width: 72, height: 72 }}
+            resizeMode="contain"
+          />
           <View>
             <Text className="text-white font-extrabold text-2xl tracking-wide">
               BFARXI-EPAS
@@ -61,7 +62,6 @@ export default function AdminLayout() {
           </View>
         </View>
 
-        {/* Navigation Items */}
         <View className="gap-2.5">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -81,7 +81,7 @@ export default function AdminLayout() {
               >
                 <Icon size={20} color={isActive ? "#395886" : "#B1C9EF"} />
                 <Text
-                  className={`font-semibold text-sm ${
+                  className={` ${
                     isActive ? "text-brand-500 font-bold" : "text-brand-100"
                   }`}
                 >
@@ -145,22 +145,23 @@ export default function AdminLayout() {
         renderDrawerContent={renderDrawerContent}
       >
         <View className="flex-1">
-          {/* Header Bar */}
           <SafeAreaView edges={["top"]}>
             <View className="flex-row items-center justify-between px-5 py-3">
               <TouchableOpacity
                 onPress={() => setOpen(true)}
-                className="w-14 h-14 rounded-full bg-brand-100 justify-center items-center"
+                className="w-14 h-14 rounded-full bg-brand-50 justify-center items-center"
               >
                 <Menu size={28} color="#638ECB" />
               </TouchableOpacity>
-              <TouchableOpacity className="w-20 h-20 bg-brand-50 rounded-full justify-center items-center">
-                <User size={48} color="#395886" />
-              </TouchableOpacity>
+
+              <Image
+                source={require("../../../assets/images/bfar.png")}
+                style={{ width: 72, height: 72 }}
+                resizeMode="contain"
+              />
             </View>
           </SafeAreaView>
 
-          {/* Screen Content Slot */}
           <View className="flex-1">
             <Slot />
           </View>

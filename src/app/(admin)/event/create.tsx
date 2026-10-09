@@ -3,7 +3,6 @@ import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
     Calendar,
     Clock,
     FileText,
@@ -25,11 +24,11 @@ import {
     View,
 } from "react-native";
 
+import EventQRCodeCard from "@/components/EventQRCodeCard";
+import LocationPickerModal from "@/components/LocationPickerModal";
 import { supabase } from "@/lib/supabase";
 import { createEvent } from "@/services/eventService";
-import LocationPickerModal from "../../../components/LocationPickerModal";
 
-// Helper to safely parse "YYYY-MM-DD" and "hh:mm AM/PM" into an ISO string
 const parseDateTimeToISO = (dateStr: string, timeStr: string): string => {
   const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (!match) {
@@ -108,7 +107,6 @@ export default function CreateEventScreen() {
     }
   };
 
-  // Helper to upload notice image using SDK 54 File API
   const uploadNoticeAttachment = async (uri: string) => {
     const fileExt = uri.split(".").pop()?.toLowerCase() || "jpeg";
     const fileName = `notice_${Date.now()}.${fileExt}`;
@@ -150,7 +148,6 @@ export default function CreateEventScreen() {
     setLoading(true);
 
     try {
-      // 1. Upload notice attachment if selected
       let attachments: { file_name: string; file_url: string }[] = [];
       if (noticeImage) {
         const uploadedFile = await uploadNoticeAttachment(noticeImage);
@@ -160,11 +157,9 @@ export default function CreateEventScreen() {
         });
       }
 
-      // 2. Parse ISO timestamps safely
       const startIso = parseDateTimeToISO(startDate, startTime);
       const endIso = parseDateTimeToISO(endDate, endTime);
 
-      // 3. Call eventService.createEvent with null -> undefined conversion
       await createEvent({
         title,
         details,
@@ -180,9 +175,11 @@ export default function CreateEventScreen() {
       });
 
       setLoading(false);
-      Alert.alert("Success", "Event created successfully!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      Alert.alert(
+        "Success",
+        "Event created successfully with assigned QR Code!",
+        [{ text: "OK", onPress: () => router.back() }],
+      );
     } catch (error: any) {
       setLoading(false);
       console.error("Failed to create event:", error);
@@ -191,25 +188,16 @@ export default function CreateEventScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
-      {/* Top Header Bar */}
-      <View className="flex-row items-center justify-between px-6 pt-12 pb-4 border-b border-slate-100">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-10 h-10 rounded-full bg-slate-100 justify-center items-center"
-        >
-          <ArrowLeft size={20} color="#334155" />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-slate-900">Create Event</Text>
-        <View className="w-10" />
-      </View>
-
+    <View className="flex-1">
       <ScrollView
-        className="flex-1 px-6 pt-6"
+        className="flex-1 px-6 pb-6 bg-white"
         contentContainerStyle={{ paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Basic Details */}
+        <Text className="text-3xl font-extrabold text-brand-500 mb-4">
+          Create Event
+        </Text>
+
         <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
           Basic Details
         </Text>
@@ -442,24 +430,47 @@ export default function CreateEventScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Create Event Button */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          disabled={loading}
-          onPress={handleSaveEvent}
-          className="bg-slate-900 py-4 rounded-2xl flex-row justify-center items-center shadow-sm"
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
+        {/* Dynamic QR Code Preview Section */}
+        <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+          Event QR Code Generation
+        </Text>
+        <EventQRCodeCard
+          qrCode={
+            title
+              ? `EVT-PREVIEW-${title.replace(/\s+/g, "").toUpperCase()}`
+              : "EVT-AUTO-GENERATED"
+          }
+          title="Generated Automatically on Creation"
+          size={140}
+        />
+
+        <View className="flex-col gap-2 mt-6">
+          <TouchableOpacity
+            activeOpacity={0.8}
+            disabled={loading}
+            onPress={handleSaveEvent}
+            className="bg-slate-900 py-4 rounded-2xl flex-row justify-center items-center shadow-sm"
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text className="text-white font-bold text-base tracking-wide">
+                Create Event
+              </Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.back()}
+            className="bg-red-400 py-4 rounded-2xl flex-row justify-center items-center shadow-sm"
+          >
             <Text className="text-white font-bold text-base tracking-wide">
-              Create Event
+              Cancel
             </Text>
-          )}
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
-      {/* Location Drawer Modal */}
       <LocationPickerModal
         visible={showLocationPicker}
         onClose={() => setShowLocationPicker(false)}

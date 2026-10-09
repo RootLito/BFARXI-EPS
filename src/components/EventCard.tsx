@@ -1,5 +1,5 @@
 import { Event } from "@/types";
-import { Calendar, Edit3, MapPin, Trash2 } from "lucide-react-native";
+import { Calendar, Edit3, MapPin, QrCode, Trash2 } from "lucide-react-native";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 interface EventCardProps {
@@ -8,6 +8,7 @@ interface EventCardProps {
   onEdit?: (event: Event) => void;
   onDelete?: (event: Event) => void;
   onImagePress?: (url: string) => void;
+  onQrPress?: (event: Event) => void;
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> =
@@ -28,6 +29,7 @@ export function EventCard({
   onEdit,
   onDelete,
   onImagePress,
+  onQrPress,
 }: EventCardProps) {
   const startDate = new Date(event.start_date).toLocaleDateString("en-US", {
     month: "short",
@@ -46,7 +48,7 @@ export function EventCard({
     >
       {/* 1. Top Bar: Action Buttons on Left, Status Badge on Right End */}
       <View className="flex-row justify-between items-center mb-3">
-        {/* Small Status Badge (Right End Above Title) */}
+        {/* Small Status Badge (Right End) */}
         <View
           className={`flex-row items-center gap-1.5 px-2.5 py-1 rounded-full ${badgeStyle.bg}`}
         >
@@ -103,25 +105,33 @@ export function EventCard({
         </View>
       </View>
 
-      {/* 4. Attachments (Full Bottom Row - Right Aligned) */}
-      {event.attachments && event.attachments.length > 0 && (
-        <View className="flex-row justify-end gap-1.5 pt-1">
-          {event.attachments.map((att) => (
-            <TouchableOpacity
-              key={att.id || att.file_url}
-              activeOpacity={0.8}
-              onPress={() => onImagePress?.(att.file_url)}
-              className="rounded-lg overflow-hidden border border-slate-200 bg-white"
-            >
-              <Image
-                source={{ uri: att.file_url }}
-                className="w-12 h-12 rounded-lg"
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+      {/* 4. Attachments & QR Button Row (Right Aligned) */}
+      <View className="flex-row justify-end items-center gap-1.5 pt-1">
+        {/* Attachment Thumbnail Images */}
+        {event.attachments?.map((att) => (
+          <TouchableOpacity
+            key={att.id || att.file_url}
+            activeOpacity={0.8}
+            onPress={() => onImagePress?.(att.file_url)}
+            className="rounded-lg overflow-hidden border border-slate-200 bg-white"
+          >
+            <Image
+              source={{ uri: att.file_url }}
+              className="w-12 h-12 rounded-lg"
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
+        ))}
+
+        {/* QR Button at the Right End */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => onQrPress?.(event)}
+          className="w-12 h-12 rounded-lg bg-slate-900 justify-center items-center shadow-sm"
+        >
+          <QrCode size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 }
